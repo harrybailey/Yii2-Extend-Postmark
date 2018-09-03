@@ -1,0 +1,17 @@
+{
+    "name": "human/yii2-postmark-mailer",
+    "description": "A Human Postmark Yii2 component, including a catch to prevent sending emails to real email addresses when not on the Production environment",
+    "require": {
+        "php": ">=5.4.0",
+        "wildbit/postmark-php": "^2.6",
+        "yiisoft/yii2": "^2.0"
+    },
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Human Software",
+            "email": "theteam@human.software",
+            "homepage": "https://human.software"
+        }
+    ]
+}
