@@ -176,16 +176,11 @@ class PostmarkMailer extends \yii\base\Component
 	/**
 	 * Send the message
 	 *
-	 * @param boolean $isError Whether the email is an error report.
 	 * @return boolean Whether the email successfully sent.
 	 */
-	public function send($isError = false)
+	public function send()
 	{
 		try {
-
-			if ($isError) {
-				$this->to($this->errorEmailAddress);
-			}
 
 			if (is_null($this->to) || empty($this->to)) {
 				throw new ServerErrorHttpException("To email cannot be blank");
@@ -200,11 +195,10 @@ class PostmarkMailer extends \yii\base\Component
 				throw new ServerErrorHttpException("Email body cannot be blank");
 			}
 
-			if (!YII_ENV_DEV) {
-
-				if (!$isError) {
-					$this->to($this->safeEmailAddress, 'Safe Email Address');
-				}
+			if (YII_ENV_DEV
+				&& !$this->toIsErrorEmail()) {
+					
+				$this->to($this->safeEmailAddress, 'Safe Email Address');
 			}
 
 			try {
@@ -242,5 +236,15 @@ class PostmarkMailer extends \yii\base\Component
 	private function processEmail($email, $name)
 	{
 		return is_null($email) ? null : (is_null($name) ? $email : (str_replace(',', '', $name).' <'.$email.'>,'));
+	}
+
+	private function toIsErrorEmail()
+	{
+		$toString = trim($this->email, ',');
+
+		$toArray = explode(',', $toString);
+
+		// there is only one recipient and that recipient contains the errorEmailAddress
+		return sizeof($toArray) == 1 && strpos($toString, $this->errorEmailAddress) !== false;
 	}
 }
