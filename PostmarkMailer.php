@@ -2,6 +2,7 @@
 
 namespace Human\Yii2ExtendPostmark;
 
+use yii;
 use yii\base\InvalidConfigException;
 use yii\web\ServerErrorHttpException;
 
@@ -11,6 +12,7 @@ class PostmarkMailer extends \yii\base\Component
 		$postmarkServerToken,
 		$errorEmailAddress,
 		$safeEmailAddress,
+		$viewPath,
 
 		$client,
 
@@ -39,6 +41,10 @@ class PostmarkMailer extends \yii\base\Component
 
 		if (!isset($this->safeEmailAddress)) {
 			throw new InvalidConfigException('safeEmailAddress must be set');
+		}
+
+		if (!isset($this->viewPath)) {
+			throw new InvalidConfigException('viewPath must be set');
 		}
 
 		$this->client = new \Postmark\PostmarkClient($this->postmarkServerToken);
@@ -74,6 +80,30 @@ class PostmarkMailer extends \yii\base\Component
 	public function setSafeEmailAddress($value)
 	{
 		$this->safeEmailAddress = $value;
+	}
+
+	/**
+	 * Allow $this->viewPath to be set
+	 *
+	 * @param string $value The filepath to the views used to generate the email body in compose().
+	 */
+	public function setViewPath($value)
+	{
+		$this->viewPath = $value;
+	}
+
+	/**
+	 * Set the message body based on view files
+	 *
+	 * @param array $viewFiles The html and text files to use to generate the email body.
+	 * @param array $params The parameters to pass to the views to generate the email body.
+	 * @return $this
+	 */
+	public function compose($viewFiles, $params)
+	{
+		return $this
+			->messageHtml(Yii::$app->controller->renderPartial($this->viewPath.'/'.$viewFiles['html'], $params))
+			->messagePlain(Yii::$app->controller->renderPartial($this->viewPath.'/'.$viewFiles['text'], $params));
 	}
 
 	/**
@@ -240,7 +270,7 @@ class PostmarkMailer extends \yii\base\Component
 
 	private function toIsErrorEmail()
 	{
-		$toString = trim($this->email, ',');
+		$toString = trim($this->to, ',');
 
 		$toArray = explode(',', $toString);
 
