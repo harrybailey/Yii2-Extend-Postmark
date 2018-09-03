@@ -15,7 +15,7 @@
         }
     ],
     "autoload": {
-        "psr-4": {"human\\yii2\\postmark-mailer\\": ""}
+        "psr-4": {"human\\yii2-postmark-mailer": ""}
     }
 
 }

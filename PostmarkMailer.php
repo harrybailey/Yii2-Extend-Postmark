@@ -1,5 +1,7 @@
 <?php
 
+namespace human\yii2;
+
 use yii\base\InvalidConfigException;
 use yii\web\ServerErrorHttpException;
 
