@@ -15,7 +15,7 @@
         }
     ],
     "autoload": {
-        "psr-4": {"human\\yii2\\extend-postmark\\": ""}
+        "psr-4": {"Human\\Yii2ExtendPostmark\\": ""}
     }
 
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace human\yii2\extend;
+namespace Human\Yii2ExtendPostmark;
 
 use yii\base\InvalidConfigException;
 use yii\web\ServerErrorHttpException;
