@@ -6,7 +6,7 @@ use yii;
 use yii\base\InvalidConfigException;
 use yii\web\ServerErrorHttpException;
 
-class PostmarkMailer extends \yii\base\Component
+class PostmarkMailer extends \yii\base\Component implements \yii\mail\MailerInterface
 {
 	private 
 		$postmarkServerToken,
@@ -20,7 +20,7 @@ class PostmarkMailer extends \yii\base\Component
 		$from,
 		$subject,
 		$htmlBody = NULL,
-		$plainTextBody = NULL,
+		$plaintextBody = NULL,
 		$attachments = [];
 
 	/**
@@ -99,11 +99,11 @@ class PostmarkMailer extends \yii\base\Component
 	 * @param array $params The parameters to pass to the views to generate the email body.
 	 * @return $this
 	 */
-	public function compose($viewFiles, $params)
+	public function compose($view = null, array $params = [])
 	{
 		return $this
-			->messageHtml(Yii::$app->controller->renderPartial($this->viewPath.'/'.$viewFiles['html'], $params))
-			->messagePlain(Yii::$app->controller->renderPartial($this->viewPath.'/'.$viewFiles['text'], $params));
+			->messageHtml(Yii::$app->controller->renderPartial($this->viewPath.'/'.$view['html'], $params))
+			->messagePlain(Yii::$app->controller->renderPartial($this->viewPath.'/'.$view['text'], $params));
 	}
 
 	/**
@@ -140,7 +140,7 @@ class PostmarkMailer extends \yii\base\Component
 	 */
 	public function messagePlain($body)
 	{
-		$this->plainTextBody = $body;
+		$this->plaintextBody = $body;
 
 		return $this;
 	}
@@ -208,7 +208,7 @@ class PostmarkMailer extends \yii\base\Component
 	 *
 	 * @return boolean Whether the email successfully sent.
 	 */
-	public function send()
+	public function send($message = null)
 	{
 		try {
 
@@ -221,7 +221,7 @@ class PostmarkMailer extends \yii\base\Component
 			}
 
 			if ((is_null($this->htmlBody) || empty($this->htmlBody))
-				&& (is_null($this->plainTextBody) || empty($this->plainTextBody))) {
+				&& (is_null($this->plaintextBody) || empty($this->plaintextBody))) {
 				throw new ServerErrorHttpException("Email body cannot be blank");
 			}
 
@@ -237,7 +237,7 @@ class PostmarkMailer extends \yii\base\Component
 					$this->to, 
 					$this->subject, 
 					$this->htmlBody, 
-					$this->plainTextBody,
+					$this->plaintextBody,
 					NULL, // tag
 					true, // track opens
 					NULL, // reply to
@@ -245,22 +245,36 @@ class PostmarkMailer extends \yii\base\Component
 					NULL, // bcc
 					NULL, // headers
 					$this->attachments, // attachments
-					NULL // track links
+					NULL, // track links
+					NULL // metadata
 				);
 
 			} catch(\Postmark\Models\PostmarkException $e) {
 				throw new ServerErrorHttpException("The email failed to send");
 
-			} catch(\Exception $generalException){
+			} catch(\Exception $e){
 				throw new ServerErrorHttpException("The email failed to send");
 			}
 
-		} catch(\CHttpException $exception){
+		} catch(\Exception $e){
 			// preferably do something with the error message here
 			return false;
 		}
 
 		return $response->errorcode === 0;
+	}
+
+	public function sendMultiple(array $messages)
+	{
+		$count = 0;
+
+		foreach ($messages as $message) {
+			if ($message->send()) {
+				$count++;
+			}
+		}
+
+		return $count;
 	}
 
 	private function processEmail($email, $name)
