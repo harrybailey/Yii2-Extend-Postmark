@@ -13,5 +13,9 @@
             "email": "theteam@human.software",
             "homepage": "https://human.software"
         }
-    ]
+    ],
+    "autoload": {
+        "psr-4": {"human\\yii2\\postmark-mailer\\": ""}
+    }
+
 }
