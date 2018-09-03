@@ -101,9 +101,49 @@ class PostmarkMailer extends \yii\base\Component implements \yii\mail\MailerInte
 	 */
 	public function compose($view = null, array $params = [])
 	{
+		if (is_array($view)) {
+
+			if (isset($view['html'])) {
+				$htmlViewPath = $this->viewPath.'/'.$view['html'];
+			} else {
+				$htmlViewPath = $view;
+			}
+
+			if (isset($view['text'])) {
+				$textViewPath = $this->viewPath.'/'.$view['text'];
+			}
+
+		}
+
+		$html = '';
+		$plaintext = '';
+
+		if ($htmlViewPath !== '') {
+			
+			try {
+				$html = Yii::$app->controller->renderPartial($htmlViewPath, $params);
+
+			} catch (\Exception $e) {
+				$html = '';
+			}
+		}
+
+		if ($textViewPath !== '') {
+			
+			try {
+				$plaintext = Yii::$app->controller->renderPartial($textViewPath, $params);
+
+			} catch (\Exception $e) {
+				$plaintext = strip_tags($html);
+			}
+
+		} else {
+			$plaintext = strip_tags($html);
+		}
+
 		return $this
-			->messageHtml(Yii::$app->controller->renderPartial($this->viewPath.'/'.$view['html'], $params))
-			->messagePlain(Yii::$app->controller->renderPartial($this->viewPath.'/'.$view['text'], $params));
+			->messageHtml($html)
+			->messagePlain($plaintext);
 	}
 
 	/**
@@ -210,6 +250,27 @@ class PostmarkMailer extends \yii\base\Component implements \yii\mail\MailerInte
 	 */
 	public function send($message = null)
 	{
+		if (!is_null($message)) {
+
+			if (is_array($message->getTo())) {
+				foreach ($message->getTo() as $to) {
+					$this->addTo($to);
+				}
+			} else {
+				$this->to($message->getTo());
+			}
+
+			if (is_array($message->getFrom())) {
+				// not sure what format this will be in if an array! We can't deal with this!
+				throw new ServerErrorHttpException("Unknown from format");
+				
+			} else {
+				$this->from($message->getFrom());
+			}
+
+			$this->subject($message->getSubject());
+		}
+
 		try {
 
 			if (is_null($this->to) || empty($this->to)) {
@@ -269,7 +330,7 @@ class PostmarkMailer extends \yii\base\Component implements \yii\mail\MailerInte
 		$count = 0;
 
 		foreach ($messages as $message) {
-			if ($message->send()) {
+			if ($this->send($message)) {
 				$count++;
 			}
 		}
