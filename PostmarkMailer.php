@@ -13,6 +13,8 @@ class PostmarkMailer extends \yii\base\Component implements \yii\mail\MailerInte
 		$errorEmailAddress,
 		$safeEmailAddress,
 		$viewPath,
+		$environment,
+		$production,
 
 		$client,
 
@@ -24,8 +26,9 @@ class PostmarkMailer extends \yii\base\Component implements \yii\mail\MailerInte
 		$attachments = [];
 
 	/**
-	 * Initialise the Postmark client
+	 * Create the Postmark client. postmarkServerToken, errorEmailAddress, safeEmailAddress, viewPath, environment, and production must have been set in the config of the component
 	 *
+	 * @return $this
 	 */
 	public function init()
 	{
@@ -47,15 +50,23 @@ class PostmarkMailer extends \yii\base\Component implements \yii\mail\MailerInte
 			throw new InvalidConfigException('viewPath must be set');
 		}
 
+		if (!isset($this->environment)) {
+			throw new InvalidConfigException('environment must be set');
+		}
+
+		if (!isset($this->production)) {
+			throw new InvalidConfigException('production must be set');
+		}
+
 		$this->client = new \Postmark\PostmarkClient($this->postmarkServerToken);
 
 		return $this;
 	}
 
 	/**
-	 * Allow $this->postmarkServerToken to be set
+	 * Allow $this->postmarkServerToken to be set in the config of the component.
 	 *
-	 * @param string $value The token associated with "Server" you'd like to use to send/receive email from.
+	 * @param string $value The Postmark token for the server you'd like to use to send/receive email from.
 	 */
 	public function setPostmarkServerToken($value)
 	{
@@ -63,7 +74,7 @@ class PostmarkMailer extends \yii\base\Component implements \yii\mail\MailerInte
 	}
 
 	/**
-	 * Allow $this->errorEmailAddress to be set
+	 * Allow $this->errorEmailAddress to be set in the config of the component.
 	 *
 	 * @param string $value The email address to send error reports to.
 	 */
@@ -73,7 +84,7 @@ class PostmarkMailer extends \yii\base\Component implements \yii\mail\MailerInte
 	}
 
 	/**
-	 * Allow $this->safeEmailAddress to be set
+	 * Allow $this->safeEmailAddress to be set in the config of the component.
 	 *
 	 * @param string $value The email address to send all emails to when not on production.
 	 */
@@ -83,13 +94,38 @@ class PostmarkMailer extends \yii\base\Component implements \yii\mail\MailerInte
 	}
 
 	/**
-	 * Allow $this->viewPath to be set
+	 * Allow $this->viewPath to be set in the config of the component.
 	 *
 	 * @param string $value The filepath to the views used to generate the email body in compose().
 	 */
 	public function setViewPath($value)
 	{
 		$this->viewPath = $value;
+	}
+
+	/**
+	 * Allow $this->environment to be set in the config of the component.
+	 *
+	 * @param string $value The current environment.
+	 */
+	public function setEnvironment($value)
+	{
+		$this->environment = $value;
+	}
+
+	/**
+	 * Allow $this->production to be set in the config of the component.
+	 *
+	 * @param string|array $value The value(s) of environment when it is production or the equivalent.
+	 */
+	public function setProduction($value)
+	{
+		if (!is_array($value)) {
+			$this->production = [$value];
+
+		} else {
+			$this->production = $value;
+		}
 	}
 
 	/**
@@ -118,7 +154,8 @@ class PostmarkMailer extends \yii\base\Component implements \yii\mail\MailerInte
 		$html = '';
 		$plaintext = '';
 
-		if ($htmlViewPath !== '') {
+		if (isset($htmlViewPath)
+			&& $htmlViewPath !== '') {
 			
 			try {
 				$html = Yii::$app->controller->renderPartial($htmlViewPath, $params);
@@ -128,7 +165,8 @@ class PostmarkMailer extends \yii\base\Component implements \yii\mail\MailerInte
 			}
 		}
 
-		if ($textViewPath !== '') {
+		if (isset($textViewPath)
+			&& $textViewPath !== '') {
 			
 			try {
 				$plaintext = Yii::$app->controller->renderPartial($textViewPath, $params);
@@ -250,6 +288,8 @@ class PostmarkMailer extends \yii\base\Component implements \yii\mail\MailerInte
 	 */
 	public function send($message = null)
 	{
+		// if $message param used (automatic use)
+
 		if (!is_null($message)) {
 
 			if (is_array($message->getTo())) {
@@ -271,56 +311,48 @@ class PostmarkMailer extends \yii\base\Component implements \yii\mail\MailerInte
 			$this->subject($message->getSubject());
 		}
 
-		try {
 
-			if (is_null($this->to) || empty($this->to)) {
-				throw new ServerErrorHttpException("To email cannot be blank");
-			}
+		// Confirm all needed variables are set
 
-			if (is_null($this->subject) || empty($this->subject)) {
-				throw new ServerErrorHttpException("Subject cannot be blank");
-			}
-
-			if ((is_null($this->htmlBody) || empty($this->htmlBody))
-				&& (is_null($this->plaintextBody) || empty($this->plaintextBody))) {
-				throw new ServerErrorHttpException("Email body cannot be blank");
-			}
-
-			if (YII_ENV_DEV
-				&& !$this->toIsErrorEmail()) {
-					
-				$this->to($this->safeEmailAddress, 'Safe Email Address');
-			}
-
-			try {
-				$response = $this->client->sendEmail(
-					$this->from, 
-					$this->to, 
-					$this->subject, 
-					$this->htmlBody, 
-					$this->plaintextBody,
-					NULL, // tag
-					true, // track opens
-					NULL, // reply to
-					NULL, // cc
-					NULL, // bcc
-					NULL, // headers
-					$this->attachments, // attachments
-					NULL, // track links
-					NULL // metadata
-				);
-
-			} catch(\Postmark\Models\PostmarkException $e) {
-				throw new ServerErrorHttpException("The email failed to send");
-
-			} catch(\Exception $e){
-				throw new ServerErrorHttpException("The email failed to send");
-			}
-
-		} catch(\Exception $e){
-			// preferably do something with the error message here
-			return false;
+		if (is_null($this->to) || empty($this->to)) {
+			throw new ServerErrorHttpException("To email cannot be blank");
 		}
+
+		if (is_null($this->subject) || empty($this->subject)) {
+			throw new ServerErrorHttpException("Subject cannot be blank");
+		}
+
+		if ((is_null($this->htmlBody) || empty($this->htmlBody))
+			&& (is_null($this->plaintextBody) || empty($this->plaintextBody))) {
+			throw new ServerErrorHttpException("Email body cannot be blank");
+		}
+
+		// check environment
+
+		if (!in_array($this->environment, $this->production)
+			&& !$this->toIsErrorEmail()) {
+				
+			$this->to($this->safeEmailAddress, 'Safe Email Address');
+
+			$this->subject = '['.$this->environment.'] '.$this->subject;
+		}
+
+		$response = $this->client->sendEmail(
+			$this->from, 
+			$this->to, 
+			$this->subject, 
+			$this->htmlBody, 
+			$this->plaintextBody,
+			NULL, // tag
+			true, // track opens
+			NULL, // reply to
+			NULL, // cc
+			NULL, // bcc
+			NULL, // headers
+			$this->attachments, // attachments
+			NULL, // track links
+			NULL // metadata
+		);
 
 		return $response->errorcode === 0;
 	}
@@ -330,8 +362,13 @@ class PostmarkMailer extends \yii\base\Component implements \yii\mail\MailerInte
 		$count = 0;
 
 		foreach ($messages as $message) {
-			if ($this->send($message)) {
-				$count++;
+
+			try {
+				if ($this->send($message)) {
+					$count++;
+				}
+			} catch (\Exception $e) {
+				// do not count
 			}
 		}
 
