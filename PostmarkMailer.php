@@ -1,6 +1,6 @@
 <?php
 
-namespace human\yii2;
+namespace human\yii2\extend;
 
 use yii\base\InvalidConfigException;
 use yii\web\ServerErrorHttpException;
