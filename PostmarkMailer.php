@@ -326,11 +326,14 @@ class PostmarkMailer extends \yii\base\Component implements \yii\mail\MailerInte
 			&& (is_null($this->plaintextBody) || empty($this->plaintextBody))) {
 			throw new ServerErrorHttpException("Email body cannot be blank");
 		}
+		
+		// Send by mail() if an error email
+		if ($this->toIsErrorEmail()) {
+			return mail($this->to, $this->subject, $this->plaintextBody, ['From: '.$this->from]);
+		}
 
 		// check environment
-
-		if (!in_array($this->environment, $this->production)
-			&& !$this->toIsErrorEmail()) {
+		if (!in_array($this->environment, $this->production)) {
 				
 			$this->to($this->safeEmailAddress, 'Safe Email Address');
 
