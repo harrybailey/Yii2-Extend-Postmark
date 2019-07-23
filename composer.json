@@ -1,5 +1,5 @@
 {
-    "name": "harrybailey/Yii2-Extend-Postmark",
+    "name": "harrybailey/yii2-extend-postmark",
     "description": "A Human Postmark Yii2 component, including a catch to prevent sending emails to real email addresses when not on the Production environment",
     "require": {
         "php": ">=5.4.0",
@@ -15,7 +15,7 @@
         }
     ],
     "autoload": {
-        "psr-4": {"harrybailey\\Yii2ExtendPostmark\\": ""}
+        "psr-4": {"harrybailey\\yii2extendpostmark\\": ""}
     }
 
 }

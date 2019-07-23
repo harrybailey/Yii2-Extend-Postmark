@@ -1,6 +1,6 @@
 <?php
 
-namespace harrybailey\Yii2ExtendPostmark;
+namespace harrybailey\yii2extendpostmark;
 
 use yii;
 use yii\base\InvalidConfigException;
