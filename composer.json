@@ -15,7 +15,7 @@
         }
     ],
     "autoload": {
-        "psr-4": {"harrybailey\\yii2extendpostmark\\": ""}
+        "psr-4": {"harrybailey\\Yii2ExtendPostmark\\": ""}
     }
 
 }
